@@ -1,0 +1,56 @@
+package mcenderdragon.nio.jarInjar;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+
+public class Test 
+{
+	public static void main(String[] args) 
+	{
+		File f1 = new File("./src/jarInJar/resources/ZipWithFile.zip").getAbsoluteFile();
+		File f2 = new File("./src/jarInJar/resources/ZipWithZip.zip").getAbsoluteFile();
+		
+		try
+		{
+		listFileInZip(f1.toPath());
+		listFileInZip(f2.toPath());
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+	
+	public static void listFileInZip(Path path) throws IOException
+	{
+		System.out.println(path);
+		
+		FileSystem fs = FileSystems.newFileSystem(path, Test.class.getClassLoader());
+		
+		fs.getRootDirectories().forEach(p -> {
+			try {
+				Files.walk(p).forEach(pp -> System.out.println(pp));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+		
+		
+		fs.close();
+	}
+	
+	public static void listSubPaths(Path p)
+	{
+		System.out.println(p.toUri());
+		
+	}
+}
