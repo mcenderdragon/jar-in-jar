@@ -36,10 +36,22 @@ public class Test
 		FileSystem fs = FileSystems.newFileSystem(path, Test.class.getClassLoader());
 		
 		fs.getRootDirectories().forEach(p -> {
-			try {
-				Files.walk(p).forEach(pp -> System.out.println(pp));
+			try 
+			{
+				Files.walk(p).forEach(pp -> 
+				{
+					System.out.println(pp + "\t" + pp.toUri());
+					if(pp.toString().endsWith(".zip"))
+					{
+						try {
+							listFileInZip(pp);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				});
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		});
