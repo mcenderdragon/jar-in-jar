@@ -1,0 +1,37 @@
+buildscript {
+	repositories 
+	{
+		mavenCentral()
+		jcenter()
+		google()
+	}
+	
+	dependencies {
+		
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+	
+configurations {
+	jarInJarCompile
+}	 	
+	
+sourceSets
+{
+	jarInJar
+	{
+		java{ srcDir 'src/jarInJar/java' }
+		resources{ srcDir 'src/jarInJar/resources' }	
+		compileClasspath = configurations.jarInJarCompile
+	}
+}	
+
+	
+task compileJarInJar(type: JavaCompile) {
+	source = sourceSets.jarInJar.java.srcDirs
+
+	classpath = sourceSets.jarInJar.compileClasspath
+	destinationDir = sourceSets.jarInJar.output.classesDir
+}
