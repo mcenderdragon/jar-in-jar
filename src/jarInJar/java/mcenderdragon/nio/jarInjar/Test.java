@@ -1,14 +1,18 @@
 package mcenderdragon.nio.jarInjar;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.zip.ZipInputStream;
 
 public class Test 
 {
@@ -27,6 +31,14 @@ public class Test
 			e.printStackTrace();
 			System.exit(1);
 		}
+		
+		try {
+			new ZipArchive(new FileInputStream(f2));
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public static void listFileInZip(Path path) throws IOException
@@ -41,15 +53,15 @@ public class Test
 				Files.walk(p).forEach(pp -> 
 				{
 					System.out.println(pp + "\t" + pp.toUri());
-					if(pp.toString().endsWith(".zip"))
-					{
-						try {
-							listFileInZip(pp);
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
+//					if(pp.toString().endsWith(".zip"))
+//					{
+//						try {
+//							listFileInZip(pp);
+//						} catch (IOException e) {
+//							// TODO Auto-generated catch block
+//							e.printStackTrace();
+//						}
+//					}
 				});
 			} catch (IOException e) {
 				e.printStackTrace();

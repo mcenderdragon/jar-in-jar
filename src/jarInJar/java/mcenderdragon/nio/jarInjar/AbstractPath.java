@@ -14,17 +14,26 @@ import java.util.Iterator;
 
 public class AbstractPath implements Path 
 {
-
+	private final FileSystem fs;
+	private final String path;
+	
+	public AbstractPath(FileSystem fs, String path) 
+	{
+		this.fs = fs;
+		this.path = path;
+	}
+	
+	
 	@Override
-	public FileSystem getFileSystem() {
-		// TODO Auto-generated method stub
-		return null;
+	public FileSystem getFileSystem() 
+	{
+		return fs;
 	}
 
 	@Override
-	public boolean isAbsolute() {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isAbsolute() 
+	{
+		return path.length() >0 && path.charAt(0) == '/';
 	}
 
 	@Override
@@ -154,9 +163,9 @@ public class AbstractPath implements Path
 	}
 
 	@Override
-	public WatchKey register(WatchService watcher, Kind<?>... events) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+	public WatchKey register(WatchService watcher, Kind<?>... events) throws IOException 
+	{
+		return register(watcher, events, new Modifier[0]);
 	}
 
 	@Override
@@ -166,9 +175,15 @@ public class AbstractPath implements Path
 	}
 
 	@Override
-	public int compareTo(Path other) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int compareTo(Path other) 
+	{
+		return path.compareTo(other.toString());
+	}
+	
+	@Override
+	public String toString() 
+	{
+		return path;
 	}
 
 }
