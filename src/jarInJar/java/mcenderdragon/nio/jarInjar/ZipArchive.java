@@ -11,10 +11,14 @@ import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import javax.swing.text.Position;
+
 public class ZipArchive 
 {
 	private final byte[] rawData;
-	private final TreeMap<String, ZipEntry> name2entry;
+	private final TreeMap<String, ZippedFile> name2entry;
+	
+	private final BakeableTree.BakedNode<String> fileTree;
 	
 	public static byte[] getContents(InputStream in) throws IOException
 	{
@@ -58,16 +62,45 @@ public class ZipArchive
 		ZipInputStream zip = new ZipInputStream(read, StandardCharsets.UTF_8);
 		ZipEntry[] entries = getZipEntries(zip);
 		
-		name2entry = new TreeMap<String, ZipEntry>();
+		name2entry = new TreeMap<String, ZippedFile>();
 		
+		BakeableTree.RawNode<String> nodes = new BakeableTree.RawNode<String>(null, "");
+		
+		int positon = 0;
 		for(ZipEntry e : entries)
 		{
-			name2entry.put(e.getName(), e);
-			System.out.println(e.getName());
+			System.out.println( positon + " " + e.getName());
+			ZippedFile zf = new ZippedFile(positon++, e);
+			BakeableTree.addPath(e.getName(), "/", nodes);
+			name2entry.put(e.getName(), zf);
+			
 		}
 		
+		fileTree = nodes.bake();
+		BakeableTree.compareTimes(nodes, fileTree);
 	}
 	
+	
+	private class ZippedFile implements Comparable<ZippedFile>
+	{
+		private final int position;
+		private final ZipEntry entry;
+		
+		public ZippedFile(int position, ZipEntry entry) 
+		{
+			super();
+			this.position = position;
+			this.entry = entry;
+		}
+		
+		@Override
+		public int compareTo(ZippedFile o) 
+		{
+			return entry.getName().compareTo(o.entry.getName());
+		}
+		
+		
+	}
 	
 	
 }
