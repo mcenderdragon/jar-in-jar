@@ -18,26 +18,28 @@ public class Test
 {
 	public static void main(String[] args) 
 	{
+		new ZipFSProvider();
+		
+		
 		File f1 = new File("./src/jarInJar/resources/ZipWithFile.zip").getAbsoluteFile();
 		File f2 = new File("./src/jarInJar/resources/ZipWithZip.zip").getAbsoluteFile();
 		File f3 = new File("./src/jarInJar/resources/test.jar").getAbsoluteFile();
 		
-//		try
-//		{
-//		listFileInZip(f1.toPath());
-//		listFileInZip(f2.toPath());
-//		}
-//		catch(Exception e)
-//		{
-//			e.printStackTrace();
-//			System.exit(1);
-//		}
+		try
+		{
+		listFileInZip(f1.toPath());
+		listFileInZip(f2.toPath());
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			System.exit(1);
+		}
 		
 		try {
 			new ZipArchive(new FileInputStream(f3));
 			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

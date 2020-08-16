@@ -1,9 +1,13 @@
 package mcenderdragon.nio.jarInjar;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.FileStore;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
@@ -14,16 +18,23 @@ import java.util.Set;
 
 import javax.management.ImmutableDescriptor;
 
+import mcenderdragon.nio.jarInjar.BakeableTree.BakedNode;
+import mcenderdragon.nio.jarInjar.ZipArchive.ZippedFile;
+
 public class ZipFS extends AbstractReadOnlyFileSystem<ZipFSProvider>
 {
 	private Path zip;
 	private final ZipPath root;
 	
-	public ZipFS(ZipFSProvider provider, Path absolute) 
+	private final ZipArchive archive;
+	
+	public ZipFS(ZipFSProvider provider, Path absolute) throws IOException 
 	{
 		super(provider);
 		this.zip = absolute;
 		this.root = new ZipPath(this, "/");
+		
+		archive = new ZipArchive(Files.newInputStream(absolute, StandardOpenOption.READ));
 	}
 
 	@Override
@@ -96,8 +107,27 @@ public class ZipFS extends AbstractReadOnlyFileSystem<ZipFSProvider>
 	@Override
 	public void close() throws IOException 
 	{
-		// TODO Auto-generated method stub
 		super.close();
+		archive.close();
+	}
+
+	public BakeableTree.BakedNode<String, ZipArchive.ZippedFile> getBakedNode(ZipPath rootDir) 
+	{
+		if(rootDir.getFileSystem() != this)
+			throw new IllegalArgumentException("Filesystem on Path is different to this!");
+
+		return archive.getPathNode(rootDir.getNameParts());
+	}
+
+	public SeekableByteChannel newByteChannel(ZipPath zipPath)  throws IOException
+	{
+		 BakeableTree.BakedNode<String, ZipArchive.ZippedFile> node = getBakedNode(zipPath);
+		 if(node == null)
+		 {
+			 throw new FileNotFoundException(zipPath.toString());
+		 }
+		 
+		return archive.newByteChannel(node.data);
 	}
 
 }

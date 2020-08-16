@@ -16,6 +16,7 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.ProviderMismatchException;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
@@ -106,8 +107,6 @@ public class ZipFSProvider extends AbstractReadOnlyFileSystemProvider
 		}
 	}
 	
-	
-	
 	@Override
 	public Path getPath(URI uri) 
 	{
@@ -125,16 +124,27 @@ public class ZipFSProvider extends AbstractReadOnlyFileSystemProvider
 	}
 	
 	@Override
-	public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs)
-			throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+	public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException 
+	{
+		if(attrs.length != 0)
+		{
+			throw new UnsupportedOperationException("FS is readonly");
+		}
+		for(OpenOption opt : options)
+		{
+			if(opt != StandardOpenOption.READ)
+			{
+				throw new UnsupportedOperationException("Only Read is currently supported");
+			}
+		}
+		
+		return  toZipPath(path).newByteChannel();
 	}
 
 	@Override
-	public DirectoryStream<Path> newDirectoryStream(Path dir, Filter<? super Path> filter) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+	public DirectoryStream<Path> newDirectoryStream(Path dir, Filter<? super Path> filter) throws IOException 
+	{
+		return toZipPath(dir).newDirectoryStream(filter);
 	}
 
 	@Override

@@ -5,7 +5,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AccessMode;
+import java.nio.file.DirectoryStream;
+import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent.Kind;
@@ -19,6 +22,8 @@ public class ZipPath extends AbstractPath<ZipFS>
 	private ZipPath parent = null;
 	private final boolean isAbsolute;
 	private int nameCount = -1;
+	
+	private String[] nameParts = null;
 	
 	public ZipPath(ZipFS fs, String path) 
 	{
@@ -74,17 +79,30 @@ public class ZipPath extends AbstractPath<ZipFS>
 	@Override
 	public int getNameCount() 
 	{
-		if(nameCount == -1)
+		return getNameParts().length;
+	}
+	
+	public String[] getNameParts()
+	{
+		if(nameParts == null)
 		{
-			
+			String[] parts = this.path.split(fs.getSeparator());
+			int i;
+			for(i=0;i<parts.length;i++)
+			{
+				if(!parts[i].isEmpty())
+					break;
+			}
+			nameParts = new String[parts.length-i];
+			System.arraycopy(parts, i, nameParts, 0, nameParts.length);
 		}
-		return nameCount;
+		return nameParts;
 	}
 
 	@Override
-	public Path getName(int index) {
-		// TODO Auto-generated method stub
-		return null;
+	public Path getName(int index) 
+	{
+		return new ZipPath(fs, getNameParts()[index]);
 	}
 
 	@Override
@@ -167,7 +185,7 @@ public class ZipPath extends AbstractPath<ZipFS>
 	}
 
 	@Override
-	public Path toAbsolutePath() 
+	public ZipPath toAbsolutePath() 
 	{
 		if(isAbsolute())
 		{
@@ -270,5 +288,15 @@ public class ZipPath extends AbstractPath<ZipFS>
 		}
 		else
 			return false;
+	}
+
+	public DirectoryStream<Path> newDirectoryStream(Filter<? super Path> filter) 
+	{
+		return new ZipFSDirStream(this, filter);
+	}
+
+	public SeekableByteChannel newByteChannel() throws IOException 
+	{
+		return fs.newByteChannel(this);
 	}
 }

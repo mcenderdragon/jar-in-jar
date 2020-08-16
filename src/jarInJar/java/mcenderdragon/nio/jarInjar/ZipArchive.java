@@ -2,23 +2,107 @@ package mcenderdragon.nio.jarInjar;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import javax.swing.text.Position;
 
-public class ZipArchive 
+public class ZipArchive implements Closeable, AutoCloseable
 {
-	private final byte[] rawData;
-	private final TreeMap<String, ZippedFile> name2entry;
+	public class ZippedFile implements Comparable<ZippedFile>
+	{
+		private final int position;
+		private final ZipEntry entry;
+		
+		public ZippedFile(int position, ZipEntry entry) 
+		{
+			super();
+			this.position = position;
+			this.entry = entry;
+		}
+		
+		@Override
+		public int compareTo(ZippedFile o) 
+		{
+			return entry.getName().compareTo(o.entry.getName());
+		}
+
+		public String getPath() 
+		{
+			return entry.getName();
+		}
+	}
 	
-	private final BakeableTree.BakedNode<String> fileTree;
+	private Set<Closeable> toClose = Collections.synchronizedSet(new HashSet<Closeable>());
+	
+	private class ZipStream implements Closeable
+	{
+		private int currentEntryPos = -1;
+		private ZipInputStream stream = null;
+		private ZipEntry currentEntry = null;
+		
+		public void init(InputStream in) throws IOException
+		{
+			close();
+			toClose.add(this);
+			
+			stream = new ZipInputStream(in);
+			currentEntry = stream.getNextEntry();
+			currentEntryPos = 0;
+		}
+		
+		@Override
+		public void close() throws IOException
+		{
+			currentEntryPos = -1;
+			currentEntry = null;
+			if(stream!=null)
+				stream.close();
+			stream = null;
+			
+			toClose.remove(this);
+		}
+		
+		public byte[] getEnteyData() throws IOException
+		{
+			int ss = (int) currentEntry.getSize();
+			if(ss<0)
+				ss = 1024;
+			ByteArrayOutputStream bout = new ByteArrayOutputStream(ss);
+			byte[] b = new byte[1024];
+			while(stream.available() > 0)
+			{
+				int len = stream.read(b);
+				bout.write(b, 0, len);
+			}
+			next();
+				
+			return bout.toByteArray();
+		}
+
+		public void next() throws IOException 
+		{
+			stream.closeEntry();
+			currentEntryPos++;
+			currentEntry = stream.getNextEntry();
+		}
+	}
+	
+	private final byte[] rawData;
+	private final BakeableTree.BakedNode<String, ZippedFile> fileTree;
+	
+	private final int fileCount;
 	
 	public static byte[] getContents(InputStream in) throws IOException
 	{
@@ -61,45 +145,81 @@ public class ZipArchive
 		ByteArrayInputStream read = new ByteArrayInputStream(in);
 		ZipInputStream zip = new ZipInputStream(read, StandardCharsets.UTF_8);
 		ZipEntry[] entries = getZipEntries(zip);
+
+		fileCount = entries.length;
 		
-		name2entry = new TreeMap<String, ZippedFile>();
-		
-		BakeableTree.RawNode<String> nodes = new BakeableTree.RawNode<String>(null, "");
+		BakeableTree.RawNode<String,ZippedFile> nodes = new BakeableTree.RawNode<String,ZippedFile>(null, "");
 		
 		int positon = 0;
 		for(ZipEntry e : entries)
 		{
-			System.out.println( positon + " " + e.getName());
 			ZippedFile zf = new ZippedFile(positon++, e);
-			BakeableTree.addPath(e.getName(), "/", nodes);
-			name2entry.put(e.getName(), zf);
-			
+			BakeableTree.addPath(e.getName(), "/", nodes).data = zf;
 		}
 		
 		fileTree = nodes.bake();
 		BakeableTree.compareTimes(nodes, fileTree);
+		
+		streamHolder = new ThreadLocal<ZipArchive.ZipStream>();
 	}
+
+	private ThreadLocal<ZipStream> streamHolder;
 	
-	
-	private class ZippedFile implements Comparable<ZippedFile>
+	protected byte[] getZipEntry(ZippedFile data) throws IOException
 	{
-		private final int position;
-		private final ZipEntry entry;
-		
-		public ZippedFile(int position, ZipEntry entry) 
+		if(streamHolder.get()==null)
 		{
-			super();
-			this.position = position;
-			this.entry = entry;
+			streamHolder.set(new ZipStream());
+		}
+		ZipStream zstream = streamHolder.get();
+		if(zstream.stream==null)
+		{
+			zstream.init(new ByteArrayInputStream(rawData));	
+		}
+		if(zstream.stream!=null && zstream.currentEntryPos <= data.position)
+		{
+			while(zstream.currentEntryPos <= data.position)
+			{
+				if(zstream.currentEntry.getName().equals(data.entry.getName()))
+				{
+					return zstream.getEnteyData(); 
+				}
+				else
+				{
+					zstream.next();
+				}
+			}
 		}
 		
-		@Override
-		public int compareTo(ZippedFile o) 
+		zstream.close();
+		return getZipEntry(data);
+	}
+
+
+	@Override
+	public void close() throws IOException 
+	{
+		toClose.forEach(t -> 
 		{
-			return entry.getName().compareTo(o.entry.getName());
-		}
-		
-		
+			try 
+			{
+				t.close();
+			}
+			catch (IOException e) 
+			{
+				e.printStackTrace();
+			}
+		});
+	}
+
+	public BakeableTree.BakedNode<String, ZippedFile> getPathNode(String[] path) 
+	{
+		return BakeableTree.search(fileTree, path).bake();
+	}
+
+	public SeekableByteChannel newByteChannel(ZippedFile data) throws IOException 
+	{
+		return new ByteArraySBC(getZipEntry(data));
 	}
 	
 	
