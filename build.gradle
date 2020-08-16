@@ -35,3 +35,13 @@ task compileJarInJar(type: JavaCompile) {
 	classpath = sourceSets.jarInJar.compileClasspath
 	destinationDir = sourceSets.jarInJar.output.classesDir
 }
+
+processResources {
+
+
+    from(sourceSets.jarInJar.resources.srcDirs) {
+        include 'META-INF/services/java.nio.file.spi.FileSystemProvider'
+                
+    }
+	
+}
