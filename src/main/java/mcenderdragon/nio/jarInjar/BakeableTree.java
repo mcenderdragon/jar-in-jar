@@ -191,7 +191,9 @@ public class BakeableTree
 			{
 				baked[i] = list.get(i).bake();
 			}
-			return new BakedNode(null, this.key, baked);
+			BakedNode bn = new BakedNode(null, this.key, baked);
+			bn.data = this.data;
+			return bn;
 		}
 
 		@Override

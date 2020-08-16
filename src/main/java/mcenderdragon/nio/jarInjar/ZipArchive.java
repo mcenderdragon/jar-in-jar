@@ -42,6 +42,11 @@ public class ZipArchive implements Closeable, AutoCloseable
 		{
 			return entry.getName();
 		}
+		
+		public ZFEntryAttribtes getAttributes()
+		{
+			return new ZFEntryAttribtes(entry);
+		}
 	}
 	
 	private Set<Closeable> toClose = Collections.synchronizedSet(new HashSet<Closeable>());
@@ -155,6 +160,12 @@ public class ZipArchive implements Closeable, AutoCloseable
 		{
 			ZippedFile zf = new ZippedFile(positon++, e);
 			BakeableTree.addPath(e.getName(), "/", nodes).data = zf;
+		}
+		
+		if(nodes.data == null)
+		{
+			ZipEntry entry = new ZipEntry(nodes.key);
+			nodes.data = new ZippedFile(-1, entry);
 		}
 		
 		fileTree = nodes.bake();

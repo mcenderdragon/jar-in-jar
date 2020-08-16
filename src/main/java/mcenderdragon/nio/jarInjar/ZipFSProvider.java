@@ -1,6 +1,8 @@
 package mcenderdragon.nio.jarInjar;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.SeekableByteChannel;
@@ -172,22 +174,38 @@ public class ZipFSProvider extends AbstractReadOnlyFileSystemProvider
 	}
 
 	@Override
-	public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
-		// TODO Auto-generated method stub
+	public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) 
+	{
+		try 
+		{
+			return (V) toZipPath(path).getAttributes();
+		}
+		catch (FileNotFoundException e) 
+		{
+			throw new IllegalStateException(e);
+		}
+	}
+
+	@Override
+	public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException 
+	{
+		if(type == BasicFileAttributes.class || type == ZFEntryAttribtes.class)
+			return (A) toZipPath(path).getAttributes();
+		
 		return null;
 	}
 
 	@Override
-	public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options)
-			throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Map<String, Object> readAttributes(Path path, String attributes, LinkOption... options) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+	public Map<String, Object> readAttributes(Path path, String attributes, LinkOption... options) throws IOException 
+	{
+		try 
+		{
+			return toZipPath(path).readAttributes(attributes, options);
+		} 
+		catch (IllegalArgumentException | SecurityException | ReflectiveOperationException e) 
+		{
+			throw new UnsupportedOperationException(e);
+		}
 	}
 
 }

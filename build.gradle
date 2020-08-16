@@ -33,3 +33,11 @@ sourceSets {
 String getVersion() {
 	return "git rev-list --all --count".execute().text.trim()
 }
+
+task testJar(type:Exec) {
+	dependsOn build
+
+	commandLine 'java', '-cp', '"'+jar.archivePath.getAbsoluteFile() + '"',  'mcenderdragon.nio.jarInjar.Test'
+	
+	standardInput = System.in
+}

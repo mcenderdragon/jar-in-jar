@@ -130,4 +130,13 @@ public class ZipFS extends AbstractReadOnlyFileSystem<ZipFSProvider>
 		return archive.newByteChannel(node.data);
 	}
 
+	public ZFEntryAttribtes getAttributes(ZipPath absolutePath) 
+	{
+		BakeableTree.BakedNode<String, ZipArchive.ZippedFile> node = getBakedNode(absolutePath);
+		if(node == null)
+			return null;
+		
+		return node.data.getAttributes();
+	}
+
 }

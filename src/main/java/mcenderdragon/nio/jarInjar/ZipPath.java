@@ -3,6 +3,7 @@ package mcenderdragon.nio.jarInjar;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.SeekableByteChannel;
@@ -15,7 +16,11 @@ import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchEvent.Modifier;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+
+import javax.management.ImmutableDescriptor;
 
 public class ZipPath extends AbstractPath<ZipFS>
 {
@@ -86,6 +91,12 @@ public class ZipPath extends AbstractPath<ZipFS>
 	{
 		if(nameParts == null)
 		{
+			if(getRoot() == this)
+			{
+				nameParts = new String[]{""};
+				return nameParts;
+			}
+			
 			String[] parts = this.path.split(fs.getSeparator());
 			int i;
 			for(i=0;i<parts.length;i++)
@@ -298,5 +309,51 @@ public class ZipPath extends AbstractPath<ZipFS>
 	public SeekableByteChannel newByteChannel() throws IOException 
 	{
 		return fs.newByteChannel(this);
+	}
+
+	public ZFEntryAttribtes getAttributes() throws FileNotFoundException 
+	{
+		ZFEntryAttribtes attr = fs.getAttributes(this.toAbsolutePath());
+		
+		if(attr == null)
+			throw new FileNotFoundException(this.toString());
+		return attr;
+	}
+
+	public Map<String, Object> readAttributes(String attributes, LinkOption[] options) throws FileNotFoundException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException 
+	{
+		String[] attrs;
+		
+		if(attributes.equals("*"))
+		{
+			attrs = new String[] {"lastModifiedTime", "lastAccessTime", "creationTime", "isRegularFile", "isDirectory", "isSymbolicLink", "isOther", "size", "fileKey"};
+		}
+		else if(attributes.contains(":"))
+		{
+			if(!attributes.startsWith("basic:"))
+			{
+				throw new UnsupportedOperationException("Only support basic file attributes");
+			}
+			else
+			{
+				attrs = attributes.replaceFirst("basic:", "").split(",");
+			}
+		}
+		else
+		{
+			attrs = attributes.split(",");
+		}
+		
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		
+		ZFEntryAttribtes zfe = getAttributes();
+		Class<ZFEntryAttribtes> cls = ZFEntryAttribtes.class;
+		
+		for(String s : attrs)
+		{
+			map.put(s, cls.getMethod(s).invoke(zfe));
+		}
+		
+		return map;
 	}
 }
