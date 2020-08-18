@@ -164,7 +164,7 @@ public class ZipArchive implements Closeable, AutoCloseable
 		
 		if(nodes.data == null)
 		{
-			ZipEntry entry = new ZipEntry(nodes.key);
+			ZipEntry entry = new ZipEntry("/");
 			nodes.data = new ZippedFile(-1, entry);
 		}
 		
@@ -225,6 +225,9 @@ public class ZipArchive implements Closeable, AutoCloseable
 
 	public BakeableTree.BakedNode<String, ZippedFile> getPathNode(String[] path) 
 	{
+		if(path.length==0)
+			throw new IllegalArgumentException("Emtpy string array is not allowed");
+		
 		return BakeableTree.search(fileTree, path).bake();
 	}
 

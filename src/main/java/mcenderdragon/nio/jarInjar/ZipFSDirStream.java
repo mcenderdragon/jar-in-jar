@@ -36,6 +36,7 @@ public class ZipFSDirStream implements DirectoryStream<Path>
 	@Override
 	public Iterator<Path> iterator() 
 	{
+		
 		return new Iter(rootDir.getFileSystem(), node, filter);
 	}
 
@@ -48,12 +49,16 @@ public class ZipFSDirStream implements DirectoryStream<Path>
 		private ZipPath next;
 		private boolean end = false;
 		
+		private Iterator<AbstractNode<String, ZippedFile>> iterBase;
+		
 		public Iter(ZipFS fs, BakeableTree.BakedNode<String, ZipArchive.ZippedFile> node, Filter<? super Path> filter) 
 		{
 			super();
 			this.fs = fs;
 			this.node = node;
 			this.filter = filter;
+			
+			iterBase = node.getChildren().iterator();
 		}
 
 		@Override
@@ -69,11 +74,6 @@ public class ZipFSDirStream implements DirectoryStream<Path>
 			ZipPath n = computeNext();
 			next = null;
 			return n;
-		}
-		
-		private void stop()
-		{
-			end = true;
 		}
 		
 		private ZipPath computeNext()
@@ -104,50 +104,25 @@ public class ZipFSDirStream implements DirectoryStream<Path>
 			}
 		}
 		
-		private Stack<BakeableTree.BakedNode<String, ZipArchive.ZippedFile>> nodes;
-		private Stack<Integer> positions;
-		
 		private ZipPath computeNextImp()
 		{
 			ZipArchive.ZippedFile file = computeNextImpBase();
-			
-			return new ZipPath(fs, file.getPath());
+			if(file==null)
+				return null;
+			String s = file.getPath();
+			if(!s.startsWith("/"))
+				s = "/" + s;
+			return new ZipPath(fs, s);
 		}
 		
 		private ZipArchive.ZippedFile computeNextImpBase()
 		{
-			if(nodes==null && positions == null)
-			{
-				nodes = new Stack<>();
-				positions = new Stack<>();
-				nodes.push(node);
-				positions.push(0);
-				
-				return node.data;
-			}
-			
-			if(nodes.isEmpty())
-			{
-				stop();
-				return null;
-			}
-			
-			BakeableTree.BakedNode<String, ZipArchive.ZippedFile> active = nodes.peek();
-			int pos = positions.peek();
-			
-			List<AbstractNode<String, ZippedFile>> childs = active.getChildren();
-			if(pos < childs.size())
-			{
-				BakeableTree.BakedNode<String, ZipArchive.ZippedFile> child = childs.get(pos).bake();
-				positions.push(0);
-				nodes.push(child);
-				return child.data;
-			}
+			if(iterBase.hasNext())
+				return iterBase.next().data;
 			else
 			{
-				nodes.pop();
-				positions.pop();
-				return computeNextImpBase();
+				end = true;
+				return null;
 			}
 		}
 	}

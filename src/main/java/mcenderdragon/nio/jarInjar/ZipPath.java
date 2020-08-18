@@ -96,16 +96,14 @@ public class ZipPath extends AbstractPath<ZipFS>
 				nameParts = new String[]{""};
 				return nameParts;
 			}
-			
-			String[] parts = this.path.split(fs.getSeparator());
-			int i;
-			for(i=0;i<parts.length;i++)
+			else if(this.equals(getRoot()))
 			{
-				if(!parts[i].isEmpty())
-					break;
+				nameParts = new String[]{""};
+				return nameParts;
 			}
-			nameParts = new String[parts.length-i];
-			System.arraycopy(parts, i, nameParts, 0, nameParts.length);
+				
+			
+			nameParts = this.path.split(fs.getSeparator());
 		}
 		return nameParts;
 	}
