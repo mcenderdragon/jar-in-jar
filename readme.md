@@ -5,11 +5,11 @@ The URI Syntax is `jarInJar:<path in zip>?<URI>`, URI has to be a fully working 
 
 # Usage & Helper
 
-##Building
+## Building
 
 With `./gradlew build` you build the jar, the jar is configured with the manifest so it registers the `jarInJar` FileSystemProvider. 
 
-##Test
+## Test
 
 Run `./gradlew testJar` to run tests
 
