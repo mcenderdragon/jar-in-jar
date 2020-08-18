@@ -73,6 +73,10 @@ artifacts {
     archives sourceJar
 }
 
+task testVars() {
+	print  "${System.env.mavenu}"
+}
+
 artifactory {
     contextUrl = "${artifactory_contextUrl}"   //The base Artifactory URL if not overridden by the publisher/resolver
     publish {
@@ -97,6 +101,7 @@ artifactory {
 
 publishing {
 	tasks.publish.dependsOn 'build'
+	tasks.publish.dependsOn 'testJar'
 	publications {
 		maven(MavenPublication) {
 			from components.java
