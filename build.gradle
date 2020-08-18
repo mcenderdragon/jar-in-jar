@@ -40,6 +40,18 @@ sourceSets {
 	}
 }
 
+task copyReadme(type: Copy ) {
+	from '/'
+	into 'src/main/resources'
+	
+	include "LICENSE"
+	include "readme.md"
+}
+
+processResources {
+	dependsOn "copyReadme"
+}
+
 String getVersion() {
 	return "git rev-list --all --count".execute().text.trim()
 }
