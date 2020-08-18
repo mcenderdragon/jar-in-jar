@@ -208,4 +208,13 @@ public class ZipFSProvider extends AbstractReadOnlyFileSystemProvider
 		}
 	}
 
+
+	public void close(ZipFS zipFS) 
+	{
+		synchronized (filesystems) 
+		{
+			filesystems.remove(zipFS.getZipPath());
+		}
+	}
+
 }

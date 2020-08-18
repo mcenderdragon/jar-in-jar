@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitOption;
@@ -36,6 +37,9 @@ public class Test
 		File f2 = new File("./src/main/resources/ZipWithZip.zip").getAbsoluteFile();
 		File f3 = new File("./src/main/resources/test.jar").getAbsoluteFile();
 		
+		System.out.println("Testign Errors");
+		testErrors(f1);
+		
 		System.out.println("Testing: " + f1);
 		checkIfZipContentIsSame(f1);
 		System.out.println("Testing: " + f2);
@@ -43,6 +47,51 @@ public class Test
 		System.out.println("Testing: " + f3);
 		checkIfZipContentIsSame(f3);
 		
+	}
+	
+	public static void testErrors(File f) throws URISyntaxException, IOException
+	{
+		URI jarInJarURI = new URI("jarInJar:/?"+ f.toURI());
+		
+		try
+		{
+			FileSystems.getFileSystem(jarInJarURI);
+			
+			System.err.println("Did not throw FileSystemNotFoundException");
+			System.exit(1);
+		}
+		catch(FileSystemNotFoundException e)
+		{
+			System.out.println("Correctly throw FileSystemNotFoundException");
+			
+			FileSystem jarInJarFS = FileSystems.newFileSystem(jarInJarURI,  Collections.emptyMap());
+			try
+			{
+				FileSystems.newFileSystem(jarInJarURI,  Collections.emptyMap());
+				
+				System.err.println("Did not throw FileSystemNotFoundException");
+				System.exit(1);
+			}
+			catch(FileSystemAlreadyExistsException ee)
+			{
+				System.out.println("Correctly throw FileSystemAlreadyExistsException");
+				
+				FileSystem fs = FileSystems.getFileSystem(jarInJarURI);
+				
+				if(fs != jarInJarFS)
+				{
+					System.err.println("getFileSystem returned wrong instance");
+					System.exit(1);
+				}
+				else
+				{
+					System.out.println("getFileSystem correctly returned already existing instance");
+					
+					fs.close();
+				}
+				
+			}
+		}
 	}
 	
 	public static void checkIfZipContentIsSame(File f) throws URISyntaxException, IOException
@@ -67,9 +116,6 @@ public class Test
 				System.exit(1);
 			}
 			
-			System.out.println(Arrays.toString(paths1.toArray()));
-			System.out.println(Arrays.toString(paths2.toArray()));
-			
 			boolean sameDirectoryList = true;
 			
 			for(String base : paths1)
@@ -80,6 +126,9 @@ public class Test
 			
 			if(!sameDirectoryList)
 			{
+				System.out.println(Arrays.toString(paths1.toArray()));
+				System.out.println(Arrays.toString(paths2.toArray()));
+				
 				System.err.println("Directorylist does not match");
 				System.exit(1);
 			}
@@ -117,6 +166,9 @@ public class Test
 					}
 				}
 			}
+			
+			jarFS.close();
+			jarInJarFS.close();
 			
 		}
 		catch(FileSystemNotFoundException e)

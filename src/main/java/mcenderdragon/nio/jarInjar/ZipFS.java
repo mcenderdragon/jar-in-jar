@@ -109,6 +109,8 @@ public class ZipFS extends AbstractReadOnlyFileSystem<ZipFSProvider>
 	{
 		super.close();
 		archive.close();
+		
+		provider.close(this);
 	}
 
 	public BakeableTree.BakedNode<String, ZipArchive.ZippedFile> getBakedNode(ZipPath rootDir) 
