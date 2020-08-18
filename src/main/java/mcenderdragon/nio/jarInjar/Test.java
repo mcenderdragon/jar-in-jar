@@ -47,6 +47,9 @@ public class Test
 		System.out.println("Testing: " + f3);
 		checkIfZipContentIsSame(f3);
 		
+		System.out.println("Testing zip in zip " + f2);
+		testZipInZip(f2, f1);
+		
 	}
 	
 	public static void testErrors(File f) throws URISyntaxException, IOException
@@ -97,13 +100,29 @@ public class Test
 	public static void checkIfZipContentIsSame(File f) throws URISyntaxException, IOException
 	{
 		URI jarURI = new URI("jar:" + f.toURI() + "!/");
-		URI jarInJarURI = new URI("jarInJar:/?"+ f.toURI());
+		URI jarInJarURI = HelperURIFormatter.asJarInJarURI(f);
 		
 		try
 		{
 			FileSystem jarFS = FileSystems.newFileSystem(jarURI, Collections.emptyMap());
 			FileSystem jarInJarFS = FileSystems.newFileSystem(jarInJarURI,  Collections.emptyMap());
-		
+			
+			checkIfZipContentIsSame(jarFS, jarInJarFS);
+			
+			jarFS.close();
+			jarInJarFS.close();
+			
+		}
+		catch(FileSystemNotFoundException e)
+		{
+			System.err.println("JarInJar FileSystem Provider is not correctly installed");
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+	
+	public static void checkIfZipContentIsSame(FileSystem jarFS, FileSystem jarInJarFS) throws IOException
+	{
 			HashSet<String> paths1 = getAllPaths(jarFS);
 			HashSet<String> paths2 = getAllPaths(jarInJarFS);
 			
@@ -165,18 +184,7 @@ public class Test
 						System.out.println(base + ": OK");
 					}
 				}
-			}
-			
-			jarFS.close();
-			jarInJarFS.close();
-			
-		}
-		catch(FileSystemNotFoundException e)
-		{
-			System.err.println("JarInJar FileSystem Provider is not correctly installed");
-			e.printStackTrace();
-			System.exit(1);
-		}
+			}	
 	}
 	
 	private static HashSet<String> getAllPaths(FileSystem fs)
@@ -204,5 +212,24 @@ public class Test
 		byte[] dataB = Files.readAllBytes(b);
 		
 		return Arrays.equals(dataA, dataB);
+	}
+
+	public static void testZipInZip(File zippedFile, File normalFile) throws URISyntaxException, IOException
+	{
+		URI jarURI = new URI("jar:" + normalFile.toURI() + "!/");
+		FileSystem jarFS = FileSystems.newFileSystem(jarURI, Collections.emptyMap());
+		
+		URI jarInJarURI = HelperURIFormatter.asJarInJarURI(zippedFile);
+		FileSystem jarInJarFS = FileSystems.newFileSystem(jarInJarURI,  Collections.emptyMap());
+		
+		Path zipInZip = jarInJarFS.getPath("/ZipWithFile.zip");
+		URI zipInZipURI = HelperURIFormatter.asJarInJarURI(zipInZip);
+		FileSystem zipInZipFS = FileSystems.newFileSystem(zipInZipURI,  Collections.emptyMap());
+		
+		checkIfZipContentIsSame(jarFS, zipInZipFS);
+		
+		jarInJarFS.close();
+		zipInZipFS.close();
+		jarFS.close();
 	}
 }

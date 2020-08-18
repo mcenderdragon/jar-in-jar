@@ -18,7 +18,7 @@ public class ByteArraySBC extends ReadOnlySBC
 	@Override
 	public int read(ByteBuffer dst) throws IOException 
 	{
-		int len = data.length - position;
+		int len = Math.min(dst.remaining(),data.length - position);
 		if(len> 0)
 		{
 			dst.put(data, position, len);
@@ -34,7 +34,7 @@ public class ByteArraySBC extends ReadOnlySBC
 	@Override
 	public long position() throws IOException 
 	{
-		return position();
+		return position;
 	}
 
 	@Override
