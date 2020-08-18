@@ -4,22 +4,32 @@ buildscript {
 		mavenCentral()
 		jcenter()
 		google()
-	}
-	
-	dependencies {
 		
+		maven {
+            url 'https://modmaven.k-4u.nl/artifactory/all'
+            credentials {
+                username = "${System.env.mavenu}"
+                password = "${System.env.mavenp}"
+            }
+		}
 	}
+	dependencies {
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4+"
+    }
 }
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
-	
+apply plugin: 'maven-publish'
+apply plugin: "com.jfrog.artifactory"
 
 def patch = getVersion()	
 version = "${major}.${minor}." + patch
 group = 'redsnakegames.mcenderdragon' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'JarInJar'
 
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
 
 sourceSets {
 	main {
@@ -37,7 +47,70 @@ String getVersion() {
 task testJar(type:Exec) {
 	dependsOn build
 
-	commandLine 'java', '-cp', '"'+jar.archivePath.getAbsoluteFile() + '"',  'mcenderdragon.nio.jarInjar.Test'
+	commandLine 'java', '-cp', jar.archivePath.getAbsoluteFile(),  'mcenderdragon.nio.jarInjar.Test'
 	
 	standardInput = System.in
+}
+
+task sourceJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+jar {
+	manifest {
+		attributes(["Specification-Title": "Java Lib",
+					"Specification-Vendor": project.group,
+					"Specification-Version": "1", // We are version 1 of the modlauncher specification
+					"Implementation-Title": archivesBaseName,
+					"Implementation-Version": version,
+					"Implementation-Vendor" : project.group,
+					"Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")],)
+    }
+}
+
+artifacts {
+    archives sourceJar
+}
+
+artifactory {
+    contextUrl = "${artifactory_contextUrl}"   //The base Artifactory URL if not overridden by the publisher/resolver
+    publish {
+        repository {
+            repoKey = 'local-releases'
+            username = "${System.env.mavenu}"
+            password = "${System.env.mavenp}"
+            maven = true
+            
+        }
+    }
+    resolve {
+        repository {
+            repoKey = 'all'
+            username = "${System.env.mavenu}"
+            password = "${System.env.mavenp}"
+            maven = true
+            
+        }
+    }
+}
+
+publishing {
+	tasks.publish.dependsOn 'build'
+	publications {
+		maven(MavenPublication) {
+			from components.java
+			artifactId = 'jar-in-jar'
+			artifacts = [sourceJar, jar]
+		}
+	}
+	repositories {
+        maven {
+            url "${artifactory_contextUrl}local-releases"
+            credentials {
+                username = "${System.env.mavenu}"
+                password = "${System.env.mavenp}"
+            }
+		}
+    }
 }
