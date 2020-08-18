@@ -25,6 +25,8 @@ public class ZipArchive implements Closeable, AutoCloseable
 		private final int position;
 		private final ZipEntry entry;
 		
+		private byte[] bytes;
+		
 		public ZippedFile(int position, ZipEntry entry) 
 		{
 			super();
@@ -89,6 +91,8 @@ public class ZipArchive implements Closeable, AutoCloseable
 			while(stream.available() > 0)
 			{
 				int len = stream.read(b);
+				if(len == -1)
+					break;
 				bout.write(b, 0, len);
 			}
 			next();
@@ -168,9 +172,7 @@ public class ZipArchive implements Closeable, AutoCloseable
 			nodes.data = new ZippedFile(-1, entry);
 		}
 		
-		fileTree = nodes.bake();
-		BakeableTree.compareTimes(nodes, fileTree);
-		
+		fileTree = nodes.bake();		
 		streamHolder = new ThreadLocal<ZipArchive.ZipStream>();
 	}
 
@@ -178,6 +180,9 @@ public class ZipArchive implements Closeable, AutoCloseable
 	
 	protected byte[] getZipEntry(ZippedFile data) throws IOException
 	{
+		if(data.bytes!=null)
+			return data.bytes;
+		
 		if(streamHolder.get()==null)
 		{
 			streamHolder.set(new ZipStream());
@@ -193,11 +198,20 @@ public class ZipArchive implements Closeable, AutoCloseable
 			{
 				if(zstream.currentEntry.getName().equals(data.entry.getName()))
 				{
-					return zstream.getEnteyData(); 
+					return data.bytes = zstream.getEnteyData(); 
 				}
 				else
 				{
-					zstream.next();
+					BakeableTree.AbstractNode<String, ZippedFile> baked = BakeableTree.search(fileTree, ("/"+zstream.currentEntry.getName()).split("/"));
+					if(baked!=null)
+					{
+						baked.data.bytes = zstream.getEnteyData();
+					}
+					else
+					{
+						zstream.next();
+					}
+					
 				}
 			}
 		}
@@ -228,7 +242,12 @@ public class ZipArchive implements Closeable, AutoCloseable
 		if(path.length==0)
 			throw new IllegalArgumentException("Emtpy string array is not allowed");
 		
-		return BakeableTree.search(fileTree, path).bake();
+		BakeableTree.AbstractNode<String, ZippedFile> n = BakeableTree.search(fileTree, path);
+		if(n==null)
+		{
+			n = BakeableTree.search(fileTree, path);
+		}
+		return n.bake();
 	}
 
 	public SeekableByteChannel newByteChannel(ZippedFile data) throws IOException 

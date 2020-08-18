@@ -124,10 +124,10 @@ public class BakeableTree
 			List<? extends AbstractNode<T,R>> l = getChildren();
 			
 			int start = 0;
-			int offset = l.size() / 2;
+			int length = l.size() / 2;
 			for(int j=0;j<l.size();j++)
 			{
-				int index = start + offset;
+				int index = start + length;
 				AbstractNode<T,R> n = l.get(index);
 				if(n.key.equals(key))
 				{
@@ -137,12 +137,14 @@ public class BakeableTree
 				{
 					if(key.compareTo(n.key) < 0)
 					{
-						offset = offset / 2;
+						length = length / 2;
 					}
 					else
 					{
 						start = index;
-						offset = offset / 2;
+						if(start+length>=l.size())
+							length = l.size() - start-1;
+//						length = length / 2;
 					}
 				}
 			}

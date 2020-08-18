@@ -178,7 +178,7 @@ public class ZipFSProvider extends AbstractReadOnlyFileSystemProvider
 	{
 		try 
 		{
-			return (V) toZipPath(path).getAttributes();
+			return (V) new ZEEntryAttributesView(toZipPath(path).getAttributes());
 		}
 		catch (FileNotFoundException e) 
 		{
