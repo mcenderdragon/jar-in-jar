@@ -18,6 +18,12 @@ buildscript {
     }
 }
 
+repositories  {
+	mavenCentral()
+	jcenter()
+	google()
+}
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
@@ -38,6 +44,18 @@ sourceSets {
 			exclude '/Zip*.zip'
 		}
 	}
+	
+	jmh {
+        java.srcDirs = ['src/jmh/java']
+        resources.srcDirs = ['src/jmh/resources']
+        compileClasspath += sourceSets.main.runtimeClasspath
+    }
+}
+
+dependencies {
+    jmhImplementation 'org.openjdk.jmh:jmh-core:1.21'
+	compile 'org.openjdk.jmh:jmh-core:1.21'
+    jmhImplementation 'org.openjdk.jmh:jmh-generator-annprocess:1.21'
 }
 
 task copyReadme(type: Copy ) {
@@ -131,3 +149,12 @@ publishing {
 		}
     }
 }
+
+task jmh(type: JavaExec, dependsOn: jmhClasses) {
+	dependsOn build
+    main = 'org.openjdk.jmh.Main'
+    classpath = sourceSets.jmh.compileClasspath + sourceSets.jmh.runtimeClasspath
+	classpath jar.archivePath
+}
+
+classes.finalizedBy(jmhClasses)
