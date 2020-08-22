@@ -10,6 +10,8 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 
+import org.openjdk.jmh.infra.Blackhole;
+
 public class BenchmarkBase 
 {
 	final URI jarFile;
@@ -62,19 +64,19 @@ public class BenchmarkBase
 		}
 	}
 	
-	public void readSequential()
+	public void readSequential(Blackhole hole)
 	{
 		try {
-			Utils.readEveryFile(FileSystems.getFileSystem(jarFile), sequential);
+			Utils.readEveryFile(FileSystems.getFileSystem(jarFile), sequential, hole);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public void readRandom()
+	public void readRandom(Blackhole hole)
 	{
 		try {
-			Utils.readEveryFile(FileSystems.getFileSystem(jarFile), random);
+			Utils.readEveryFile(FileSystems.getFileSystem(jarFile), random, hole);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

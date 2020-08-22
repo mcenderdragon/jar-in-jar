@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.openjdk.jmh.infra.Blackhole;
+
 public class Utils 	
 {
 	public static List<String> filesSequential(Path path) throws IOException
@@ -27,7 +29,7 @@ public class Utils
 		return l;
 	}
 	
-	public static void readEveryFile(FileSystem fs, List<String> files) throws IOException
+	public static void readEveryFile(FileSystem fs, List<String> files, Blackhole hole) throws IOException
 	{
 		Path p = null;
 		try
@@ -37,7 +39,7 @@ public class Utils
 				p = fs.getPath(path);
 				if(Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS))
 				{
-					Files.readAllBytes(p);
+					hole.consume(Files.readAllBytes(p));
 				}
 			}
 		}
