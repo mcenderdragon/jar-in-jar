@@ -6,20 +6,12 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
 import java.nio.file.StandardOpenOption;
-import java.nio.file.WatchService;
 import java.nio.file.attribute.UserPrincipalLookupService;
-import java.nio.file.spi.FileSystemProvider;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import javax.management.ImmutableDescriptor;
-
-import mcenderdragon.nio.jarInjar.BakeableTree.BakedNode;
-import mcenderdragon.nio.jarInjar.ZipArchive.ZippedFile;
 
 public class ZipFS extends AbstractReadOnlyFileSystem<ZipFSProvider>
 {
@@ -113,6 +105,7 @@ public class ZipFS extends AbstractReadOnlyFileSystem<ZipFSProvider>
 		provider.close(this);
 	}
 
+	//@Nullable
 	public BakeableTree.BakedNode<String, ZipArchive.ZippedFile> getBakedNode(ZipPath rootDir) 
 	{
 		if(rootDir.getFileSystem() != this)

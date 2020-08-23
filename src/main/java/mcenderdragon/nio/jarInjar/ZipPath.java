@@ -115,33 +115,89 @@ public class ZipPath extends AbstractPath<ZipFS>
 	}
 
 	@Override
-	public Path subpath(int beginIndex, int endIndex) {
-		// TODO Auto-generated method stub
+	public Path subpath(int beginIndex, int endIndex) 
+	{
+		StringBuilder builder = new StringBuilder();
+		for(int i=beginIndex;i<endIndex;i++)
+		{
+			builder.append(fs.getSeparator());
+			builder.append(this.getNameParts()[i]);
+		}
 		return null;
 	}
 
 	@Override
-	public boolean startsWith(Path other) {
-		// TODO Auto-generated method stub
+	public boolean startsWith(Path other) 
+	{
+		if(other.getFileSystem()!=this.getFileSystem())
+			return false;
+		if(other instanceof ZipPath)
+		{
+			ZipPath otherP = (ZipPath) other;
+			String[] parts = otherP.getNameParts();
+			return startsWith(parts);
+		}
+		return false;
+	}
+	
+	private boolean startsWith(String[] nameParts)
+	{	
+		if(nameParts.length > this.getNameParts().length)
+		{
+			return false;
+		}
+		for(int i=0;i<nameParts.length;i++)
+		{
+			if(!nameParts[i].equals(this.getNameParts()[i]))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	@Override
+	public boolean startsWith(String other) 
+	{
+		String[] parts = other.split(fs.getSeparator());
+		return startsWith(parts);
+	}
+
+	@Override
+	public boolean endsWith(Path other) 
+	{
+		if(other.getFileSystem()!=this.getFileSystem())
+			return false;
+		if(other instanceof ZipPath)
+		{
+			ZipPath otherP = (ZipPath) other;
+			String[] parts = otherP.getNameParts();
+			return endsWith(parts);
+		}
 		return false;
 	}
 
 	@Override
-	public boolean startsWith(String other) {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean endsWith(String other) 
+	{
+		String[] parts = other.split(fs.getSeparator());
+		return endsWith(parts);
 	}
-
-	@Override
-	public boolean endsWith(Path other) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean endsWith(String other) {
-		// TODO Auto-generated method stub
-		return false;
+	
+	private boolean endsWith(String[] nameParts)
+	{
+		if(nameParts.length > this.getNameParts().length)
+		{
+			return false;
+		}
+		for(int i=0;i<nameParts.length;i++)
+		{
+			if(!nameParts[nameParts.length-i-1].equals(this.getNameParts()[this.getNameParts().length-i-1]))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	@Override
@@ -204,9 +260,9 @@ public class ZipPath extends AbstractPath<ZipFS>
 	}
 
 	@Override
-	public Path toRealPath(LinkOption... options) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+	public Path toRealPath(LinkOption... options) throws IOException 
+	{
+		return toAbsolutePath();
 	}
 
 	@Override
@@ -228,9 +284,26 @@ public class ZipPath extends AbstractPath<ZipFS>
 	}
 
 	@Override
-	public Iterator<Path> iterator() {
-		// TODO Auto-generated method stub
-		return null;
+	public Iterator<Path> iterator() 
+	{
+		return new Iterator<Path>()
+		{
+			int i = 0;
+			
+			@Override
+			public boolean hasNext() 
+			{
+				return i < getNameCount();
+			}
+
+			@Override
+			public Path next() 
+			{
+				Path p = subpath(0, i+1);
+				i++;
+				return p;
+			}
+		};
 	}
 
 	public boolean isHidden() 
@@ -267,8 +340,7 @@ public class ZipPath extends AbstractPath<ZipFS>
 
 	public boolean exists() 
 	{
-		// TODO Auto-generated method stub
-		return false;
+		return this.fs.getBakedNode(this) != null;
 	}
 
 	public boolean isSameFile(Path path2) 
