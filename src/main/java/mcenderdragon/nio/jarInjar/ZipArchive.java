@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
@@ -25,7 +26,7 @@ public class ZipArchive implements Closeable, AutoCloseable
 		private final int position;
 		private final ZipEntry entry;
 		
-		private byte[] bytes;
+		private SoftReference<byte[]> bytes;
 		
 		public ZippedFile(int position, ZipEntry entry) 
 		{
@@ -81,7 +82,7 @@ public class ZipArchive implements Closeable, AutoCloseable
 			toClose.remove(this);
 		}
 		
-		public byte[] getEnteyData() throws IOException
+		public byte[] getEntryData() throws IOException
 		{
 			int ss = (int) currentEntry.getSize();
 			if(ss<0)
@@ -129,7 +130,7 @@ public class ZipArchive implements Closeable, AutoCloseable
 	
 	public static ZipEntry[] getZipEntries(ZipInputStream zip) throws IOException
 	{
-		ArrayList<ZipEntry> list = new ArrayList();
+		ArrayList<ZipEntry> list = new ArrayList<>();
 		do
 		{
 			list.add(zip.getNextEntry());
@@ -180,8 +181,8 @@ public class ZipArchive implements Closeable, AutoCloseable
 	
 	protected byte[] getZipEntry(ZippedFile data) throws IOException
 	{
-		if(data.bytes!=null)
-			return data.bytes;
+		if(data.bytes!=null && data.bytes.get()!=null)
+			return data.bytes.get();
 		
 		if(streamHolder.get()==null)
 		{
@@ -198,14 +199,16 @@ public class ZipArchive implements Closeable, AutoCloseable
 			{
 				if(zstream.currentEntry.getName().equals(data.entry.getName()))
 				{
-					return data.bytes = zstream.getEnteyData(); 
+					byte[] d = zstream.getEntryData();
+					data.bytes = new SoftReference<byte[]>(d); 
+					return d;
 				}
 				else
 				{
 					BakeableTree.AbstractNode<String, ZippedFile> baked = BakeableTree.search(fileTree, ("/"+zstream.currentEntry.getName()).split("/"));
 					if(baked!=null)
 					{
-						baked.data.bytes = zstream.getEnteyData();
+						baked.data.bytes = new SoftReference<byte[]>(zstream.getEntryData());
 					}
 					else
 					{
