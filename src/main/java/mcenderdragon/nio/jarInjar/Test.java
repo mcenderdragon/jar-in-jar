@@ -35,7 +35,7 @@ public class Test
 //		
 		File f1 = new File("./src/main/resources/ZipWithFile.zip").getAbsoluteFile();
 		File f2 = new File("./src/main/resources/ZipWithZip.zip").getAbsoluteFile();
-		File f3 = new File("./src/main/resources/test.jar").getAbsoluteFile();
+		File f3 = new File("./src/main/resources/large.jar").getAbsoluteFile();
 		
 		System.out.println("Testign Errors");
 		testErrors(f1);
